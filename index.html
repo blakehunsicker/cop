@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='utf-8' />
+    <title>Co-pilot</title>
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <!-- Firebase -->
+    <!-- <script src="https://www.gstatic.com/firebasejs/3.4.0/firebase.js"></script> -->
+
+    <!-- CodeMirror -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.17.0/codemirror.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.17.0/codemirror.js"></script>
+
+    <!-- Firepad -->
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.css" />
+    <script src="https://cdn.firebase.com/libs/firepad/1.4.0/firepad.min.js"></script>
+
+    <!-- Firechat -->
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firechat/3.0.1/firechat.min.css" />
+    <script src="https://cdn.firebase.com/libs/firechat/3.0.1/firechat.min.js"></script>
+
+    <!-- Co-pilot -->
+    <link rel="stylesheet" type="text/css" href="css/co-pilot.css" />
+  </head>
+  <body onload="init()">
+    <div id="firepad"></div>
+    <script src="https://www.gstatic.com/firebasejs/3.4.0/firebase.js"></script>
+    <script type="text/javascript">
+      var config = {
+        apiKey: "AIzaSyCb1MX4DDV4EbwMHT5AA4oHJiXmdSLrttk",
+        authDomain: "co-pilot-8616c.firebaseapp.com",
+        databaseURL: "https://co-pilot-8616c.firebaseio.com",
+        storageBucket: "co-pilot-8616c.appspot.com",
+        messagingSenderId: "547655223893"
+      };
+      firebase.initializeApp(config);
+    </script>
+    <script src="js/co-pilot.js"></script>
+    <div id="firechat-wrapper">
+      <button onclick="login('twitter');">Login with Twitter</button>
+    </div>
+  </body>
+
+</html>

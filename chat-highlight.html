@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='utf-8' />
+
+    <!-- jQuery -->
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js'></script>
+
+    <!-- Firebase -->
+    <script src='https://cdn.firebase.com/js/client/2.0.2/firebase.js'></script>
+
+    <!-- Firechat -->
+    <link rel='stylesheet' href='https://cdn.firebase.com/libs/firechat/2.0.1/firechat.min.css' />
+    <script src='https://cdn.firebase.com/libs/firechat/2.0.1/firechat.min.js'></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.10.0/codemirror.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.10.0/codemirror.css" />
+
+
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firepad/1.3.0/firepad.css" />
+    <script src="https://cdn.firebase.com/libs/firepad/1.3.0/firepad.min.js"></script>
+
+  <style>
+    html { height: 100%; }
+    body { margin: 0; height: 100%; position: relative; }
+      /* Height / width / positioning can be customized for your use case.
+         For demo purposes, we make firepad fill the entire browser. */
+    #firepad-container {
+      width: 60%;
+      height: 60%;
+    }
+    #firechat {
+      top: 100px;
+      width: 30%;
+      position: absolute;
+      margin-left: 60%;
+    }
+    .background {
+      background-color: #17aab4;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="firepad-container"></div>
+  <div id="firechat-wrapper">
+    <a onclick='login("twitter");'>Login</a>
+  </div>
+    <script type='text/javascript'>
+
+    var hash = window.location.hash.replace(/#/g, '');
+    
+    var codeMirror = CodeMirror(document.getElementById('firepad-container'), {
+      lineWrapping: true,
+      lineNumbers: true
+    });
+
+    function init() {
+      //// Initialize Firebase.
+      var firepadRef = getExampleRef();
+      
+      // var codeMirror = CodeMirror(document.getElementById('firepad-container'), {
+      //   lineWrapping: true,
+      //   lineNumbers: true
+      // });
+
+      var firepad = Firepad.fromCodeMirror(firepadRef, codeMirror,
+        {
+          richTextToolbar: true,
+          richTextShortcuts: true
+        });
+
+      firepad.on('ready', function() {
+        if (firepad.isHistoryEmpty()) {    
+          firepad.setText('yo try putting some #hashtags in here'); 
+        } else {
+          $("pre.CodeMirror-line span:contains('#')").html(function(_,h){
+            var any_hash = /(^|)(#[a-z\d-]+)/ig;
+            var result = h.match(any_hash);
+            return h.replace(result, '<span style="background-color:#8EC5B4;">'+result+'</span>');
+          }); 
+        }
+      });
+
+      
+
+      // For finding hashtags in the doc body!
+      firepad.on('synced', function(isSynced) {
+        console.log("we are synced m'lord")
+        $("pre.CodeMirror-line span:contains('#')").html(function(_,h){
+          var any_hash = /(^|)(#[a-z\d-]+)/ig;
+          var result = h.match(any_hash);
+          return h.replace(result, '<span style="background-color:#8EC5B4;">'+result+'</span>');
+        }); 
+      });
+
+      // An example of a complex custom entity.
+      firepad.registerEntity('checkbox', {
+        render: function (info, entityHandler) {
+          var inputElement = document.createElement('input');
+          inputElement.setAttribute('type', 'checkbox');
+          if(info.checked) {
+            inputElement.checked = 'checked';
+          }
+          inputElement.addEventListener('click', function () {
+            entityHandler.replace({checked:this.checked});
+          });
+          return inputElement;
+        }.bind(this),
+        fromElement: function (element) {
+          var info = {};
+          if(element.hasAttribute('checked')) {
+            info.checked = true;
+          }
+          return info;
+        },
+        update: function (info, element) {
+          if (info.checked) {
+            element.checked = 'checked';
+          } else {
+            element.checked = null;
+          }
+        },
+        export: function (info) {
+          var inputElement = document.createElement('checkbox');
+          if(info.checked) {
+            inputElement.setAttribute('checked', true);
+          }
+          return inputElement;
+        }  
+      });
+    
+
+    // Helper to get hash from end of URL or generate a random one.
+      function getExampleRef() {
+        var ref = new Firebase('https://co-pilot.firebaseio.com/new_posts');
+        
+        if (hash) {
+          ref = ref.child(hash);
+        } else {
+          ref = ref.push(); // generate unique location.
+          window.location = window.location + '#' + ref.key(); // add it as a hash to the URL.
+
+        }
+        if (typeof console !== 'undefined') 
+          console.log('Firebase data: ', ref.toString());
+        return ref;
+      }
+    }
+      
+    init();
+
+
+      var pathArray = window.location.hash.substr(1);
+      var chatRef = new Firebase('https://co-pilot.firebaseio.com/new_posts/' + pathArray + '/chat');
+      
+      var chat = new FirechatUI(chatRef, document.getElementById('firechat-wrapper'));
+
+      chatRef.onAuth(function(authData) {
+        // Once authenticated, instantiate Firechat with our user id and user name
+        if (authData) {3
+          chat.setUser(authData.uid, authData[authData.provider].displayName);
+        }
+      });
+
+      function login(provider) {
+        chatRef.authWithOAuthPopup(provider, function(error, authData) {
+          if (error) {
+            console.log(error);
+          }
+        });
+      }
+
+      chat.on('message-add', function(snap){
+        var message = chatRef.child('room-messages');
+        console.log('m is '+message);
+        message.on('child_added', function(snapshot) {
+          var snapkey = snapshot.key();
+          var messaging = new Firebase('https://co-pilot.firebaseio.com/new_posts/' + pathArray + '/chat/room-messages/'+snapshot.key());
+          messaging.orderByChild('timestamp').limitToLast(1).on('child_added',function(childSnapshot) {
+            var latest_message = childSnapshot.child('message').val();
+            console.log('----------latest_message is '+latest_message+' ----------');
+            var tagslistarr = latest_message.split(' ');
+            var arr=[];
+            console.log('taglistarr: '+tagslistarr+' . arr: '+arr);
+            $.each(tagslistarr,function(i,val){
+                if(tagslistarr[i].indexOf('#') == 0){
+                  arr.push(tagslistarr[i]);  
+                }
+            });
+            arr_full = arr.length;
+            if (arr.length > 0) {
+              $("div.message-content:contains("+arr+")").html(function(_,h){
+                var current_line = $(this).text();
+                var tryit = latest_message.split(arr).pop();
+                console.log('current_line from messages is '+current_line);
+                $("pre.CodeMirror-line span:contains('"+arr+"')").html(function(_,j){
+                  var doc_text_line = $(this).text();
+                  var after_arr_doc_line = doc_text_line.split(arr).pop();
+
+                  console.log('this is doc_text_line: ' +doc_text_line);
+
+                  return j.replace(after_arr_doc_line, tryit);
+                });
+                codeMirror.markText({line: 1, ch: 2}, {line: 1, ch: 2}, {className: 'background'});
+                return h.replace(arr, '<span style="background-color:#8EC5B4;">'+arr+'</span>');
+              });
+            } else {};
+          });
+        });
+      });
+
+    //   }
+      
+    // init();
+    
+
+    </script>
+    <div id='firechat-wrapper'>
+      <a onclick='login("twitter");'>Login</a>
+    </div>
+  </body>
+</html>

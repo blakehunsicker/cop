@@ -1,0 +1,14 @@
+{
+  "database": {
+    "rules": "database-rules.json"
+  },
+  "hosting": {
+    "public": "n",
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
+}
